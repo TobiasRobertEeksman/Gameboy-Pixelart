@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/styles.css">
+    <title>Pixelart Filter</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</head>
+<body>
+    <main>
+        <h1>Gameboy Pixelart Filter</h1>
+        <h4 style ="color:#12113f; text-align:center;margin: 0;">by Tobias Robert Eeksman</h4>
+        <!-- Upload Form -->
+        <div>
+            <h2>Upload Image</h2>
+            <form id="upload-form" action="/upload" method="POST" enctype="multipart/form-data">
+                <input id="image-input" type="file" name="image" accept="image/png, image/jpeg" required>
+                <div id="colors">
+                    <h3>Custom Colors (Hex):</h3>
+                    <input type="text" name="colors" placeholder="#RRGGBB">
+                    <input type="text" name="colors" placeholder="#RRGGBB">
+                    <input type="text" name="colors" placeholder="#RRGGBB">
+                    <input type="text" name="colors" placeholder="#RRGGBB">
+                </div>
+                <button type="submit">Submit</button>
+                
+                <div id="used-palette-container">
+                    <h3>Used Palette:</h3>
+                    <div id="used-palette">
+                        <!-- Color squares will be dynamically added here -->
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Image Comparison -->
+        <div class="image-comparison">
+            <div>
+                <h3>Uploaded Image</h3>
+                <img id="image-preview" src="" alt="Uploaded image will appear here.">
+            </div>
+            <div>
+                <h3>Processed Image</h3>
+                <img id="processed-image" src="" alt="Processed image will appear here.">
+            </div>
+        </div>
+
+        <!-- Unique Block Grid -->
+        <div class="unique-blocks">
+            <h3>Unique Block Grid</h3>
+            <img id="unique-blocks-image" src="" alt="Unique blocks grid will appear here.">
+        </div>
+
+        <button type="button" class="download-button" data-download="processed-image">Download</button>
+        
+    </main>
+</body>
+<script>
+
+    // Show preview of the uploaded image immediately
+    document.getElementById("image-input").addEventListener("change", function () {
+        const file = this.files[0]; // Get the uploaded file
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const previewImage = document.getElementById("image-preview");
+                previewImage.src = e.target.result; // Display the uploaded image immediately
+                previewImage.alt = 'Uploaded Image Preview';
+            };
+            reader.readAsDataURL(file); // Read the file as a Data URL for immediate preview
+        }
+    });
+
+    // Handle form submission for processing the image
+    document.getElementById("upload-form").addEventListener("submit", function (e) {
+        e.preventDefault(); // Prevent form submission and reload
+
+        const formData = new FormData(this);
+
+        // Display a loading message for the processed image
+        const imageContainer = document.getElementById("processed-image");
+        imageContainer.src = '';
+        imageContainer.alt = 'Processing image...';
+
+        // Send the data to process the image
+        fetch('/upload', {
+            method: 'POST',
+            body: formData,
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.blob();
+        })
+        .then(blob => {
+            const url = URL.createObjectURL(blob);
+            imageContainer.src = url; // Display the processed image dynamically
+            imageContainer.alt = 'Processed Image';
+
+            // Start checking for unique blocks in the background
+            const fileName = formData.get("image").name;
+            checkUniqueBlocks(fileName);
+
+            fetchPalette(fileName); // Fetch and display the palette
+        })
+        .catch(error => {
+            console.error('Error during upload:', error);
+            imageContainer.alt = 'Error processing image.';
+        });
+    });
+
+
+    function fetchPalette(fileName) {
+        fetch(`/palette?file_name=${fileName}`)
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                const paletteContainer = document.getElementById('used-palette');
+                paletteContainer.innerHTML = ''; // Clear any previous palette
+                data.used_palette.forEach(color => {
+                    const colorSquare = document.createElement('div');
+                    colorSquare.style.backgroundColor = color;
+                    colorSquare.style.width = '40px';
+                    colorSquare.style.height = '40px';
+                    colorSquare.style.borderRadius = '8px';
+                    colorSquare.style.display = 'inline-block';
+                    colorSquare.style.margin = '5px';
+                    paletteContainer.appendChild(colorSquare);
+                });
+            })
+            .catch(error => console.error('Error fetching palette:', error));
+    }    
+
+    // Function to check for unique blocks
+    function checkUniqueBlocks(fileName) {
+    const interval = setInterval(() => {
+        const formData = new FormData();
+        formData.append("file_name", fileName);
+
+        fetch('/unique-blocks', {
+            method: 'POST',
+            body: formData,
+        })
+        .then(response => {
+            if (response.status === 202) {
+                console.log('Unique blocks still processing...');
+            } else if (response.ok) {
+                return response.blob();
+            } else {
+                throw new Error('Error fetching unique blocks.');
+            }
+        })
+        .then(blob => {
+            if (blob) {
+                const uniqueBlocksContainer = document.getElementById('unique-blocks-image');
+                uniqueBlocksContainer.src = URL.createObjectURL(blob);
+                uniqueBlocksContainer.alt = 'Unique Block Grid';
+                clearInterval(interval); // Stop polling
+            }
+        })
+        .catch(error => {
+            console.error('Error checking unique blocks:', error);
+            clearInterval(interval); // Stop polling in case of errors
+        });
+    }, 2000); // Check every 2 seconds
+
+    // Handle download of a ZIP containing uploaded image, processed image, and unique block image
+    document.querySelector(".download-button").addEventListener("click", async function () {
+        const uploadedImageInput = document.getElementById("image-input");
+        const uploadedFile = uploadedImageInput.files[0]; // Get the uploaded image file
+        const processedImage = document.getElementById("processed-image").src;
+        const uniqueBlockImage = document.getElementById("unique-blocks-image").src;
+
+        if (!uploadedFile || !processedImage || !uniqueBlockImage) {
+            alert("All images (uploaded, processed, and unique blocks) must be available before downloading.");
+            return;
+        }
+
+        const zip = new JSZip();
+
+        try {
+            // Add uploaded image to ZIP
+            const uploadedBlob = await uploadedFile.arrayBuffer();
+            zip.file(uploadedFile.name, uploadedBlob);
+
+            // Fetch and add processed image to ZIP
+            const processedResponse = await fetch(processedImage);
+            const processedBlob = await processedResponse.blob();
+            zip.file("processed-image.png", processedBlob);
+
+            // Fetch and add unique block image to ZIP
+            const uniqueResponse = await fetch(uniqueBlockImage);
+            const uniqueBlob = await uniqueResponse.blob();
+            zip.file("unique-blocks.png", uniqueBlob);
+
+            // Generate the ZIP file and trigger download
+            zip.generateAsync({ type: "blob" }).then(function (zipContent) {
+                const a = document.createElement("a");
+                a.href = URL.createObjectURL(zipContent);
+                a.download = "pixelart_images.zip";
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            });
+        } catch (error) {
+            console.error("Error generating ZIP file:", error);
+            alert("An error occurred while preparing the download. Please try again.");
+        }
+    });
+
+}
+</script>
+</html>
