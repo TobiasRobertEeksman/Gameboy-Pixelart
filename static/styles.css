@@ -1,0 +1,155 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+main {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 20px;
+    background: #fff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+h1, h2 {
+    text-align: center;
+    color: #555;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+form input[type="file"] {
+    margin: 10px 0;
+    padding: 10px;
+}
+
+form button {
+    margin-top: 10px;
+    padding: 10px 20px;
+    background-color: #234d6f;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+form button:hover {
+    background-color: #002147;
+}
+
+.image-comparison {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 50px; /* Increase spacing between images */
+    margin-top: 20px;
+}
+
+.image-comparison img {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 5px;
+    width: 500px; /* Increased image size */
+    height: 500px; /* Increased image size */
+    object-fit: contain;
+}
+
+.image-comparison div {
+    text-align: center;
+}
+
+.container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+}
+
+.container img, .container .palette, .container .blocks {
+    flex: 1;
+    max-width: 30%;
+}
+
+img {
+    max-width: 100%;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 5px;
+}
+
+.palette, .blocks {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+    background-color: #fff;
+}
+
+.palette div, .blocks div {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    margin: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.unique-blocks {
+    margin-top: 30px; /* Add spacing above */
+    text-align: center;
+}
+
+.unique-blocks img {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 5px;
+    width: calc(2 * 500px + 50px); /* Match combined width of two images + gap */
+    height: auto; /* Maintain aspect ratio */
+    object-fit: contain;
+    display: block;
+    margin: 0 auto; /* Center align */
+}
+
+#used-palette-container {
+    text-align: center;
+    margin-top: 20px;
+}
+
+#used-palette {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.color-square {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+.download-button {
+    margin-top: 10px;
+    padding: 10px 20px;
+    display: block;
+    margin: 10px auto;
+    background-color: #2d7c25;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    /*border: 2px solid $fWhite;*/
+    &:hover{
+      background-color: rgb(7, 77, 22);
+      color: White;
+    }
+  }
