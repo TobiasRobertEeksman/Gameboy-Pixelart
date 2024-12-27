@@ -1,6 +1,6 @@
 from sklearn.cluster import KMeans
 import numpy as np
-from PIL import Image
+from PIL import Image, ExifTags
 import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('Agg')
@@ -15,7 +15,25 @@ NUM_BLOCKS = BLOCKS_HORIZONTAL * BLOCKS_VERTICAL
 
 
 def resize_and_pad(image, output_width, output_height):
-    """Resize and pad image to fit the desired output dimensions."""
+    """Resize and pad image to fit the desired output dimensions, preserving orientation."""
+    # Correct orientation based on EXIF metadata
+    try:
+        for orientation in ExifTags.TAGS.keys():
+            if ExifTags.TAGS[orientation] == 'Orientation':
+                break
+        exif = image._getexif()
+        if exif and orientation in exif:
+            if exif[orientation] == 3:
+                image = image.rotate(180, expand=True)
+            elif exif[orientation] == 6:
+                image = image.rotate(270, expand=True)
+            elif exif[orientation] == 8:
+                image = image.rotate(90, expand=True)
+    except (AttributeError, KeyError, IndexError):
+        # If EXIF data is missing or invalid, do nothing
+        pass
+
+    # Proceed with resizing and padding
     original_width, original_height = image.size
     aspect_ratio = original_width / original_height
 
@@ -36,7 +54,6 @@ def resize_and_pad(image, output_width, output_height):
     padded_image.paste(image, (offset_x, offset_y))
 
     return np.array(padded_image) / 255.0  # Normalize to [0, 1]
-
 
 
 def extract_blocks(image):
