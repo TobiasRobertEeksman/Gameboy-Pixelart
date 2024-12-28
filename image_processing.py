@@ -175,7 +175,7 @@ def save_blocks_high_quality(blocks, output_path, grid_cols, spacing):
         grid[start_row:start_row + block_height, start_col:start_col + block_width] = block
 
     # Save the grid as a high-quality image
-    fig, ax = plt.subplots(figsize=(grid_cols, grid_rows), dpi=300)
+    fig, ax = plt.subplots(figsize=(grid_cols, grid_rows), dpi=72)
     ax.axis('off')  # No axes
     ax.imshow(grid, interpolation='nearest')
     plt.tight_layout(pad=0)
