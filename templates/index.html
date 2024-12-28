@@ -36,6 +36,8 @@
                     <input type="text" name="colors" placeholder="#RRGGBB">
                     <input type="text" name="colors" placeholder="#RRGGBB">
                 </div>
+                <div id="error-message" style="color: red; text-align: center; display: none; margin-top: 10px;"></div>
+
                 <button type="submit">Submit</button>
                 
                 <div id="used-palette-container">
@@ -44,6 +46,7 @@
                         <!-- Color squares will be dynamically added here -->
                     </div>
                 </div>
+                
             </form>
         </div>
 
@@ -89,6 +92,31 @@
     document.getElementById("upload-form").addEventListener("submit", function (e) {
         e.preventDefault(); // Prevent form submission and reload
 
+        // Validate custom colors
+        const customColorInputs = document.querySelectorAll('input[name="colors"]');
+        const errorMessage = document.getElementById('error-message');
+
+        // Check if some but not all custom colors are filled
+        let allFilled = true;
+        let anyFilled = false;
+
+        customColorInputs.forEach(input => {
+            const value = input.value.trim();
+            if (value === '') {
+                allFilled = false;
+            } else {
+                anyFilled = true;
+            }
+        });
+
+        if (!allFilled && anyFilled) {
+            errorMessage.textContent = 'Please specify all 4 custom colors or leave them all blank.';
+            errorMessage.style.display = 'block';
+            return; // Stop further processing if validation fails
+        } else {
+            errorMessage.style.display = 'none'; // Hide the error if inputs are valid
+        }
+
         const formData = new FormData(this);
 
         // Display a loading message for the processed image
@@ -130,19 +158,35 @@
                 console.log(data);
                 const paletteContainer = document.getElementById('used-palette');
                 paletteContainer.innerHTML = ''; // Clear any previous palette
-                data.used_palette.forEach(color => {
+
+                // Get references to the custom color input fields
+                const customColorInputs = document.querySelectorAll('input[name="colors"]');
+
+                // Ensure the number of squares matches the number of inputs
+                data.used_palette.forEach((color, index) => {
                     const colorSquare = document.createElement('div');
+                    colorSquare.className = 'color-square'; // Ensure class is added here
                     colorSquare.style.backgroundColor = color;
                     colorSquare.style.width = '40px';
                     colorSquare.style.height = '40px';
                     colorSquare.style.borderRadius = '8px';
                     colorSquare.style.display = 'inline-block';
                     colorSquare.style.margin = '5px';
+                    colorSquare.style.cursor = 'pointer'; // Indicate clickability
+
+                    // Add click event to insert the hex code into the corresponding input field
+                    colorSquare.addEventListener('click', () => {
+                        if (customColorInputs[index]) {
+                            customColorInputs[index].value = color;
+                        }
+                    });
+
                     paletteContainer.appendChild(colorSquare);
                 });
             })
             .catch(error => console.error('Error fetching palette:', error));
-    }    
+    }
+
 
     // Function to check for unique blocks
     function checkUniqueBlocks(fileName) {
