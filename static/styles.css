@@ -157,10 +157,18 @@ img {
 }
 
 .color-square {
-    width: 40px;
+    width: 40px; /* Ensure squares have consistent size */
     height: 40px;
     border-radius: 8px;
-    border: 1px solid #ccc;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.color-square:hover {
+    transform: scale(1.1); /* Slightly larger enlargement for clarity */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3); /* A more prominent shadow */
+    background-color: rgba(255, 255, 255, 0.2); /* Add a subtle overlay effect */
+    cursor: pointer;
+    border: 1px solid rgba(0, 0, 0, 0.5); /* Make it look more interactive */
 }
 
 .download-button {
@@ -179,3 +187,13 @@ img {
       color: White;
     }
   }
+
+  #error-message {
+    font-size: 14px;
+    font-weight: bold;
+    background-color: #ffe6e6;
+    border: 1px solid #ff4d4d;
+    padding: 10px;
+    border-radius: 8px;
+    margin-top: 10px;
+}
