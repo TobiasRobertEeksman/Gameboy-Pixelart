@@ -16,6 +16,8 @@ os.makedirs(UNIQUE_BLOCKS_FOLDER, exist_ok=True)
 
 # Dictionary to track the status of unique block processing
 processing_status = {}
+last_processed_files = {}  # Key: "last_files", Value: {"input": ..., "processed": ..., "unique_blocks": ...}
+
 
 def process_unique_blocks(input_path, blocks_output_path, file_key, custom_palette):
     """
@@ -31,19 +33,44 @@ def process_unique_blocks(input_path, blocks_output_path, file_key, custom_palet
         print(f"Error processing unique blocks: {e}")
         processing_status[file_key] = "error"
 
+def cleanup_files(file_paths):
+    """
+    Deletes the specified files if they exist.
+    """
+    for key, file_path in file_paths.items():
+        try:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+                print(f"Deleted {key} file: {file_path}")
+            else:
+                print(f"{key.capitalize()} file not found, skipping: {file_path}")
+        except Exception as e:
+            print(f"Error deleting {key} file {file_path}: {e}")
+
+
 @app.route("/")
 def home():
     return render_template("index.html")
 
 @app.route("/upload", methods=["POST"])
 def upload():
+    global last_processed_files
+
     # Handle file upload
     file = request.files["image"]
     if not file:
         return "No file selected", 400
 
+    # Extract the filename
+    filename = file.filename
+
+    # Clean up old files
+    if "last_files" in last_processed_files:
+        old_files = last_processed_files["last_files"]
+        cleanup_files(old_files)
+
     # Save uploaded file
-    input_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    input_path = os.path.join(UPLOAD_FOLDER, filename)
     file.save(input_path)
 
     # Get custom palette from user input
@@ -52,21 +79,28 @@ def upload():
 
     # Process the main image
     output_image, used_palette, _ = process_image(input_path, custom_palette)
-    output_path = os.path.join(PROCESSED_FOLDER, "processed_" + file.filename)
+    output_path = os.path.join(PROCESSED_FOLDER, "processed_" + filename)
     save_image(output_image, output_path)
 
     # Store the palette for retrieval
-    palette_data[file.filename] = used_palette
+    palette_data[filename] = used_palette
 
     # Start processing unique blocks in the background
-    blocks_output_path = os.path.join(UNIQUE_BLOCKS_FOLDER, "unique_blocks_" + file.filename)
-    file_key = file.filename  # Use the filename as a key for tracking
+    blocks_output_path = os.path.join(UNIQUE_BLOCKS_FOLDER, "unique_blocks_" + filename)
+    file_key = filename  # Use the filename as a key for tracking
     processing_status[file_key] = "processing"
 
     threading.Thread(
         target=process_unique_blocks,
         args=(input_path, blocks_output_path, file_key, custom_palette)
     ).start()
+
+    # Update the last processed files
+    last_processed_files["last_files"] = {
+        "input": input_path,
+        "processed": output_path,
+        "unique_blocks": blocks_output_path
+    }
 
     # Return the processed image immediately
     return send_file(output_path, mimetype='image/png', as_attachment=False)
@@ -119,6 +153,7 @@ def get_palette():
     
     hex_palette = [rgb_to_hex(color) for color in palette]
     return jsonify({"used_palette": hex_palette})
+
 
 
 if __name__ == "__main__":
